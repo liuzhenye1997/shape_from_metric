@@ -318,19 +318,13 @@ face_psi=zeros(face_number,max_iteration*4);
 while iteration<max_iteration
     if iteration>0
         [face_psi1re,face_psi1im,face_psi2re,face_psi2im,resx,resy,resz,points_old]=solver(iteration,face_hedge,vertex_theta,vertex_face,L3,vertex_flip,vertex_src,vertex_dst,vertex_next,vertex_prev,angle,faces,points_psi1re,points_psi1im,points_psi2re,points_psi2im,face_weight,M,face_ind,star1,face_src,face_dst,face_A,length,points,face_number,face_dihedral,face_theta,face_psi1re,face_psi1im,face_psi2re,face_psi2im);
-
         points_psi1re=face_psi1re;
         points_psi1im=face_psi1im;
         points_psi2im=face_psi2im;
         points_psi2re=face_psi2re;
         face_psi(:,4*iteration+1:4*iteration+4)=[face_psi1re,face_psi1im,face_psi2re,face_psi2im];
-    end
-
-    points_new(:,3*iteration+1:3*iteration+3)=points;
+    end  
     iteration=iteration+1;
-    
-    
-  
 end 
 
 [resx,resy,resz,points_old,points]=isometry_possion_reconstruction(faces,angle,vertex_prev,vertex_dst,vertex_src,vertex_flip,points,L_right,length,face_psi2re,face_psi2im,face_psi1im,face_psi1re,vertex_face,vertex_theta);
@@ -387,7 +381,7 @@ end
 save_obj(points,faces,sprintf('BunnyFromMetric_%d.obj',max_iteration));
 
 
-points_last=points_new(:,max_iteration*3-2:max_iteration*3);
+points_last=points;
 length_new=sqrt(sum((points_last(vertex_dst',:)-points_last(vertex_src',:)).^2,2));
 length=sqrt(sum((points_old(vertex_dst',:)-points_old(vertex_src',:)).^2,2));
 vertex_log_err=log10(length_new./length);
