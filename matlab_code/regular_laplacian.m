@@ -1,0 +1,9 @@
+function d0=regular_laplacian(face_number,point_number,vertex_src,vertex_dst)
+vertex_src=vertex_src';
+vertex_dst=vertex_dst';
+vertex_src=vertex_src(:);
+vertex_dst=vertex_dst(:);
+d0_row=[1:3*face_number,1:3*face_number];
+d0_col=[vertex_src,vertex_dst];
+d0_val=[-ones(face_number*3,1),ones(face_number*3,1)];
+d0=sparse(d0_row,d0_col,d0_val,face_number*3,point_number);
