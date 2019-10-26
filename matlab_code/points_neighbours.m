@@ -1,3 +1,4 @@
+%求点的邻点。points_nbrs的每一行是点i的所有1领域的点。
 function points_nbrs=points_neighbours(face_number,faces,point_number)
 degree=points_degree(face_number,faces);
 points_degree_temp=zeros(point_number,1);
