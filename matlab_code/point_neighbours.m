@@ -1,3 +1,4 @@
+%求序号为point_index的点的1邻域
 function nbrs=point_neighbours(face_number,faces,point_index)
 nbrs=[];
 for i=1:face_number
