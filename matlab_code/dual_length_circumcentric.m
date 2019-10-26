@@ -1,3 +1,4 @@
+%求对偶边的长度。对偶图的点取的是外心。三条对偶边的长度为外心到对应边的距离。
 function vertex_dual_length=dual_length_circumcentric(length,area,vertex_next,vertex_prev)
 l0=length;
 l1=length(vertex_next');
