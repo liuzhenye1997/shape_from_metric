@@ -1,9 +1,0 @@
-function quaternion=compute_dihedral(p,q)
-p_norm=sqrt(sum(p.^2,2));
-q_norm=sqrt(sum(q.^2,2));
-p=p./p_norm;
-q=q./q_norm;
-normal=[p(:,2).*q(:,3)-p(:,3).*q(:,2) p(:,3).*q(:,1)-p(:,1).*q(:,3) p(:,1).*q(:,2)-p(:,2).*q(:,1)];
-normal=normal./sqrt(sum(normal.^2,2));
-theta=acos(sum(p.*q,2));
-quaternion=[cos(theta/2) normal.*sin(theta/2)];
