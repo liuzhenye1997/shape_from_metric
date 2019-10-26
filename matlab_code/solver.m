@@ -33,7 +33,7 @@ IZmu=Quaternion.batch_quaternion_multiplication(IZ,mu);
 F=tau_inv;
 G=rho_inv;
 
-%e_r,r_c,r_b,r_t代表论文中的μ，i*μ,z*j*μ,i*z*j*μ.
+%e_r,r_c,r_b,r_t代表论文中的μ，i*μ,z*j*μ,i*z*j*μ.k则为论文中的ε
 [k_real,k_connection,k_torsion,k_bending]=create_k(iteration,mesh.f_number);
 e_r=mu;
 e_c=Imu;
@@ -151,7 +151,7 @@ P_4=[P14,P24,P34,P44];
 P=[P_1;P_2;P_3;P_4];
 
 DMU=P*AVG;
-%根据迭代次数调整k，即论文中的μ
+%根据迭代次数调整k，即论文中的ε
 function [k_real,k_connection,k_torsion,k_bending]=create_k(iteration,face_number)
 if iteration<10
     k_real=ones(3*face_number,1);
