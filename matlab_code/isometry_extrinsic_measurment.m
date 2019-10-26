@@ -1,3 +1,4 @@
+%求二个相邻平面的二面角。每一行是面上三条半边与相邻面的二面角
 function vertex_dihedral=isometry_extrinsic_measurment(vertex_dst,vertex_src,vertex_face,vertex_flip,face_number,points_old,faces)
 normal=compute_normal(points_old,faces);
 
