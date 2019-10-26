@@ -17,10 +17,8 @@ face_weight=vertex_dual_length./mesh.length;
 [face_psi1re,face_psi1im,face_psi2re,face_psi2im]=isometry_spinor(mesh.f_number);
 %迭代使得论文定义的能量变小,输出face_psi,即λ.
 iteration=0;
-while iteration<max_iteration
-    if iteration>0
-        [face_psi1re,face_psi1im,face_psi2re,face_psi2im,~,~,~]=solver(mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,face_psi1re,face_psi1im,face_psi2re,face_psi2im);
-    end  
+while iteration<max_iteration  
+    [face_psi1re,face_psi1im,face_psi2re,face_psi2im,~,~,~]=solver(mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,face_psi1re,face_psi1im,face_psi2re,face_psi2im);
     iteration=iteration+1;
 end
 %利用求得的face_psi(即λ)
