@@ -1,4 +1,4 @@
-function points=BunnyFromMetric(max_iteration,length,faces)
+function points=BunnyFromMetric(max_iteration,length,faces,g_is_zero)
 %利用边的长度和面创建三角网格
 mesh = Triangular_mesh(faces,length);
 %求点的邻域面积，对偶边的长度，角度和权重。点的权重为点的邻域面积，面的权重为对偶边长与边长之比。即论文算法2的第一行
@@ -12,17 +12,18 @@ face_weight=vertex_dual_length./mesh.length;
 %计算laplacian矩阵。
 [L_graph,~,~,~]=regular_laplacian(face_weight,point_weight,mesh.f_number,mesh.p_number,mesh.v_src,mesh.v_dst);
 %face_src为表面顶点所在面，face_dst为拥有同一条半边相邻的面。face_dihedral为平面三条边与i-j平面的二面角。face_weight为平面的三条半边的权重。
-[face_dihedral,face_weight,~,face_dst,face_src]=isometry_build_dual_graph(mesh.length,mesh.f_number,mesh.v_flip,vertex_A,vertex_theta,vertex_dual_length);
+[face_dihedral,~,~,face_dst,face_src]=isometry_build_dual_graph(mesh.length,mesh.f_number,mesh.v_flip,vertex_A,vertex_theta,vertex_dual_length);
+face_weight=ones(size(face_weight));
 %初始化face_psi，即论文中的λ。即论文算法2的第六行
-[face_psi1re,face_psi1im,face_psi2re,face_psi2im]=isometry_spinor(mesh.f_number);
+lambda=isometry_spinor(mesh.f_number);
 %迭代使得论文定义的能量变小,输出face_psi,即λ.
 iteration=0;
 while iteration<max_iteration  
-    [face_psi1re,face_psi1im,face_psi2re,face_psi2im,~,~,~]=solver(mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,face_psi1re,face_psi1im,face_psi2re,face_psi2im);
+    lambda=solver(g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,lambda);
     iteration=iteration+1;
 end
 %利用求得的face_psi(即λ)
-[~,~,~,points]=isometry_possion_reconstruction(angle,mesh.v_prev,mesh.v_dst,mesh.v_src,mesh.v_flip,L_graph,mesh.length,face_psi2re,face_psi2im,face_psi1im,face_psi1re,mesh.v_face,vertex_theta);
+points=isometry_possion_reconstruction(angle,mesh.v_prev,mesh.v_dst,mesh.v_src,mesh.v_flip,L_graph,mesh.length,lambda,mesh.v_face,vertex_theta);
 
 
 
