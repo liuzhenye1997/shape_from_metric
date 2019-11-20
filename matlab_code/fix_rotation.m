@@ -55,7 +55,7 @@ QoldE=Quaternion.qrotate(Q,old_face_hedge_vec);
 c=sum(batch_normalize(face_hedge_vec_0).*batch_normalize(QoldE),2);
 s=sum(batch_normalize(face_hedge_vec_0).*batch_cross(normal,batch_normalize(QoldE)),2);
 R=Quaternion.create_quaternion(atan2(s,c),normal);
-face_rot=Quaternion.batch_quaternion_multiplication(R,Q);
+face_rot=Quaternion.batch_multiplication(R,Q);
 
 length=edge_length(faces,points);
 area_new=face_area(length);
