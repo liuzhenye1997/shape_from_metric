@@ -5,8 +5,9 @@ classdef Quaternion
         function  Q=create_quaternion(theta,normal)                           
             Q=[cos(theta/2) normal.*sin(theta/2)];          
         end
+        
         %利用旋转矩阵创建四元数
-        function Q=matrix_to_quaternion(m)
+        function Q=matrix_to_q(m)
             w_temp=sqrt(m(1,1)+m(2,2)+m(3,3)+1)/2;
             x_temp=sqrt(m(1,1)-m(2,2)-m(3,3)+1)/2;
             y_temp=sqrt(-m(1,1)+m(2,2)-m(3,3)+1)/2;
@@ -34,9 +35,18 @@ classdef Quaternion
                 y=(m(2,3)+m(3,2))/(4*z);
             end
             Q=[w x y z];
+        end       
+        
+        function Q=batch_matrix_to_q(m)
+            w=sqrt(m(:,1)+m(:,5)+m(:,9)+1)/2;                    
+            x=(m(:,6)-m(:,8))./(4*w);
+            y=(m(:,7)-m(:,3))./(4*w);
+            z=(m(:,2)-m(:,4))./(4*w);          
+            Q=[w x y z];
         end         
+        
         %只利用旋转轴创建四元数，其中旋转轴的模长为旋转的角度。输入的旋转轴只有一个
-        function quaternion=angleaxis_to_quaternion(angleaxis)
+        function quaternion=angleaxis_to_q(angleaxis)
             norm=sqrt(sum(angleaxis.^2));
             if norm==0
                 quaternion=[1 0 0 0];
@@ -45,39 +55,44 @@ classdef Quaternion
                 quaternion=[cos(norm/2) angleaxis(1)*sin(norm/2) angleaxis(2)*sin(norm/2) angleaxis(3)*sin(norm/2)];
             end
         end
+        
         %只利用旋转轴创建四元数，其中旋转轴的模长为旋转的角度。输入的旋转轴的个数为第一维长度
-        function quaternion=batch_angleaxis_to_quaternion(angleaxis)
+        function quaternion=batch_angleaxis_to_q(angleaxis)
             norm=sqrt(sum(angleaxis.^2,2));
             batch_number=size(angleaxis,1);
             quaternion=zeros(batch_number,4);
             angleaxis=angleaxis./norm;
             quaternion(:,1)=1;
             norm_index=norm>0;
-
             quaternion(norm_index,:)=[cos(norm(norm_index)/2) angleaxis(norm_index,1).*sin(norm(norm_index)/2) angleaxis(norm_index,2).*sin(norm(norm_index)/2) angleaxis(norm_index,3).*sin(norm(norm_index)/2)];    
         end
+        
         %两个四元数相乘
-        function result=quaternion_multiplication(p,q)
+        function result=multiplication(p,q)
             result=[p(1)*q(1)-p(2)*q(2)-p(3)*q(3) p(1)*q(2)+p(2)*q(1)+p(3)*q(4)-p(4)*q(3) p(1)*q(3)-p(2)*q(4)+p(3)*q(1)+p(4)*q(2) p(1)*q(4)+p(2)*q(3)-p(3)*q(2)+p(4)*q(1)];    
         end
+        
         %两批四元数相乘。输入的四元数的个数为第一维长度
-        function result=batch_quaternion_multiplication(p,q)
+        function result=batch_multiplication(p,q)
             result=[p(:,1).*q(:,1)-p(:,2).*q(:,2)-p(:,3).*q(:,3)-p(:,4).*q(:,4) ...
                 p(:,1).*q(:,2)+p(:,2).*q(:,1)+p(:,3).*q(:,4)-p(:,4).*q(:,3) ...
                 p(:,1).*q(:,3)-p(:,2).*q(:,4)+p(:,3).*q(:,1)+p(:,4).*q(:,2) ...
                 p(:,1).*q(:,4)+p(:,2).*q(:,3)-p(:,3).*q(:,2)+p(:,4).*q(:,1)];
         end
+        
         %向量vector在四元数的作用下旋转
         function Q_vector=qrotate(Q,vector)
             vector=[zeros(size(vector,1),1) vector];
             Q_transpose=[Q(:,1) -Q(:,2:4)];
-            Q_vector=Quaternion.batch_quaternion_multiplication(Quaternion.batch_quaternion_multiplication(Q,vector),Q_transpose);
+            Q_vector=Quaternion.batch_multiplication(Quaternion.batch_multiplication(Q,vector),Q_transpose);
             Q_vector=Q_vector(:,2:4);
         end
+        
         %单位四元数p的逆
         function result=qinvert(p)
             result=[p(:,1) -p(:,2) -p(:,3) -p(:,4)];
         end
+        
         %计算从向量p旋转到向量q所需的四元数
         function quaternion=compute_dihedral(p,q)
             p_norm=sqrt(sum(p.^2,2));
@@ -89,6 +104,7 @@ classdef Quaternion
             theta=acos(sum(p.*q,2));
             quaternion=[cos(theta/2) normal.*sin(theta/2)];
         end
+        
     end
 end
 
