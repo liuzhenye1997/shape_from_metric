@@ -100,7 +100,7 @@ end
 evenOrodd=floor((points_holonomy(:)-points_holonomyFromA(:))/pi+0.5);
 points_isBad=mod(evenOrodd,2);
 
-
+%%
 function vertex_isCotree=set_isCotree_for_opp_hedges(vertex_isCotree,face_number,vertex_flip)
 for i=1:face_number
     for j=1:3
@@ -113,6 +113,7 @@ for i=1:face_number
     end
 end
 
+%%
 function [points_distance,points_parent,points_parenting_vtx,vertex_isTree]=tree_breadth_first_search(point_number,faces,root,vertex_isCotree)
 face_number=size(faces,1);
 vertex_isTree=zeros(face_number*3,1);
@@ -152,6 +153,7 @@ while size(Q,2)>0
     end
 end
 
+%%
 function points_isBad=label_bad_vertices(points_holonomyFromA,points_holonomy,type)
 point_number=size(points_holonomy,2);
 points_isBad=zeros(point_number,1);
@@ -166,7 +168,8 @@ else
         points_isBad(i)=plusorminus<0;
     end
 end
-%由于vertex和point是多对一的关系。故pointvertices的每一行指的是point i所对应的vertex。
+
+%% 由于vertex和point是多对一的关系。故pointvertices的每一行指的是point i所对应的vertex。
 function pointvertices=point_to_vertices(max_degree,point_number,faces)
 face_number=size(faces,1);
 pointvertices=zeros(point_number,max_degree);
@@ -178,6 +181,7 @@ for i=1:face_number
     end
 end
 
+%%
 function root_candidate=find_root_candidate(points_local_isBdy)
 point_number=size(points_local_isBdy,1);
 root_candidate=1;
@@ -189,6 +193,7 @@ for i=1:point_number
     end
 end
 
+%%
 function [face_distance,face_parent,face_parenting_vtx,vertex_isCotree]=face_breadth_first_search(vertex_flip,face_number,coroot)
 Q=[];
 face_distance=-ones(face_number,1);
@@ -206,8 +211,7 @@ while size(Q,2)>0
         if vtx_flip==-1
             continue
         end
-        nbr=floor(vtx_flip/3-0.1)+1;
-                
+        nbr=floor(vtx_flip/3-0.1)+1;               
         if distance(nbr)==-1
             distance(nbr)=distance(curr)+1;
             face_distance(nbr)=distance(nbr);
