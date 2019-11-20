@@ -13,7 +13,7 @@ points_gauss_curvature=gauss_curvature(faces,angle,point_number);
 points_gauss_curvature=2*pi-points_gauss_curvature;
 
 
-%计算vertex的theta这一属性。该属性指的是将半边旋转到实正半轴所需角度，也是半边与正半轴夹角的相反数。其中第一条半边与正半轴重合。三角形位于实轴上方。
+%% 计算vertex的theta这一属性。该属性指的是将半边旋转到实正半轴所需角度，也是半边与正半轴夹角的相反数。其中第一条半边与正半轴重合。三角形位于实轴上方。
 %一个面的三个顶点的值分别为0，A-pi，A+B-2pi。然后再利用atan2将其转换到-pi到pi之间。其中A,B,C分别为平面三个角的角度。
 function vertex_theta=hedge_coordinate(angle,vertex_next,faces,face_hedge)
 face_number=size(faces,1);
@@ -38,7 +38,8 @@ for i=1:face_number
     end
 end
 vertex_theta=vertex_theta';
-%使vertex_A*vertex_A(vertex_flip)<0。消除其歧义性。
+
+%% 使vertex_A*vertex_A(vertex_flip)<0。消除其歧义性。
 function vertex_A=fix_pi_pi_ambiguity(vertex_A,vertex_flip)
 vertex_A_temp=vertex_A';
 face_number=size(vertex_A,1);
@@ -52,7 +53,8 @@ for i=1:face_number
         end
     end
 end
-%求vertex_A,对应论文中的r(i,j)。
+
+%% 求vertex_A,对应论文中的r(i,j)。
 function vertex_A=define_parallel_transport_angle_A(vertex_theta,vertex_flip)
 vertex_theta_temp=vertex_theta';
 vertex_A=zeros(size(vertex_theta));
@@ -66,7 +68,8 @@ for i=1:face_number
         vertex_A(i,j)=atan2(sin(vertex_A(i,j)),cos(vertex_A(i,j)));
     end
 end
-%求每个点的高斯曲率
+
+%% 求每个点的高斯曲率
 function points_gauss_curvature=gauss_curvature(faces,angle,point_number)
 points_gauss_curvature=zeros(1,point_number);
 face_number=size(faces,1);
