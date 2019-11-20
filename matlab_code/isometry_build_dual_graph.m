@@ -19,7 +19,7 @@ for i=1:face_number
     end
 end
 
-%face_dihedral为面三条边与i-j平面的二面角。face_weight为面的三条半边的权重
+% face_dihedral为面三条边与i-j平面的二面角。face_weight为面的三条半边的权重
 face_dihedral=zeros(face_number,3);
 face_weight=zeros(3*face_number,1);
 for i=1:face_number
@@ -29,10 +29,4 @@ for i=1:face_number
         face_weight(3*i+j-3)=0.5*length_temp/total_dual_length;
     end
 end
-
-
-
-
-
-
 
