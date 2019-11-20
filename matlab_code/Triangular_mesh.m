@@ -24,8 +24,7 @@ classdef Triangular_mesh
     
     methods
         %创建时只有面和边的长度    
-        function mesh = Triangular_mesh(faces,length)
-            
+        function mesh = Triangular_mesh(faces,length)          
             mesh.f_area=face_area(length);         
             mesh.f_number = size(faces,1);
             mesh.f_ind=1:3*mesh.f_number;
@@ -35,7 +34,7 @@ classdef Triangular_mesh
             mesh.faces=faces;
             length=length';
             mesh.length=length(:);
-            
+           
             %创建顶点属性
             mesh.v_face=[1:mesh.f_number;1:mesh.f_number;1:mesh.f_number]';
             mesh.v_src=mesh.faces;
@@ -44,13 +43,12 @@ classdef Triangular_mesh
             mesh.v_prev=[(0:mesh.f_number-1)*3+3;(0:mesh.f_number-1)*3+1;(0:mesh.f_number-1)*3+2]';           
             mesh.v_flip=vertex_flip(mesh.f_number,mesh.v_dst,mesh.v_src);          
             mesh.angle=vertex_angle(mesh.length,mesh.v_prev,mesh.v_next);  
-            
         end
-  
-        
+       
         function drawmesh(mesh)            
             drawmesh(mesh.faces, mesh.points);
-        end        
+        end   
+        
     end
     methods(Static=true)
     end
