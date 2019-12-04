@@ -18,8 +18,9 @@ face_weight=ones(size(face_weight));
 lambda=isometry_spinor(mesh.f_number);
 %迭代使得论文定义的能量变小,输出face_psi,即λ.
 iteration=0;
+solver1 = splsolver(L_graph, 'ldlt');
 while iteration<max_iteration  
-    lambda=solver(g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,lambda);
+    [solver1,lambda]=solver(solver1,g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,lambda);
     iteration=iteration+1;
 end
 %利用求得的face_psi(即λ)
