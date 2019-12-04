@@ -1,10 +1,16 @@
 addpath('splsolver')
 max_iteration=40;
-[points_old,faces,~,~]=readObj('bunny.obj');
+name='torus.obj';
+[points_old,faces,~,~]=readObj(name);
 length=edge_length(faces,points_old);
-%g_is_zero令论文中的App D的g直接设为0.以运行40次为例，误差为10^-10量级.想省点时间设g=0，即g_is_zero=true。
+%g_is_zero令论文中的App D的g直接设为0.以运行40次为例，误差为10^-10量级.想省点时间设g=0，即g_is_zero=true.  
 g_is_zero=false;
-points=BunnyFromMetric(max_iteration,length,faces,g_is_zero);
+if strcmp(name,'torus.obj')
+    length=0.05*ones(size(length));
+    points=Torus(points_old,max_iteration,length,faces,g_is_zero);
+else
+    points=BunnyFromMetric(max_iteration,length,faces,g_is_zero);
+end
 mesh = Triangular_mesh(faces,length);
 %将结果平移旋转对称成与输入相似。
 mesh.points=fix_rotation(mesh.f_hedge,points_old,mesh.v_dst,mesh.v_src,mesh.v_face,mesh.v_flip,mesh.f_number,points,mesh.faces);
