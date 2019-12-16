@@ -1,4 +1,4 @@
-function [solver1,lambda]=solver(solver1,g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,face_A,face_dihedral,face_theta,lambda)
+function [solver1,lambda,L,index,M,P]=solver(solver1,g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,face_A,face_dihedral,face_theta,lambda,L,index,M,P)
 %τ=exp(i*A)表示的旋转转化成四元数的结果。
 halfDihedralZ=0.5*face_dihedral(:).*[zeros(3*mesh.f_number,1) cos(face_theta(:)) sin(face_theta(:))];
 face_A_temp=face_A';
@@ -35,7 +35,10 @@ IZmu=Quaternion.batch_multiplication(IZ,mu);
 [k_r,k_c,k_t,k_b]=create_k(iteration);
 
 % L，M为论文App D中的L和M。P和AVG用于求论文中的矩阵g
-[L,M,P,AVG]=L_M_P_AVG(g_is_zero,k_r,k_b,k_c,k_t,mu,Zmu,Imu,IZmu,mesh.f_number,face_weight,mesh.f_ind,face_dst,tau,rho,mesh.f_area,mesh.v_flip,avgfac);
+if iteration<1
+    M=sparse(1:mesh.f_number*4,1:mesh.f_number*4,repelem(mesh.f_area,1,4));
+end
+[L,P,AVG,index]=L_P_AVG(iteration,g_is_zero,k_r,k_b,k_c,k_t,mu,Zmu,Imu,IZmu,mesh.f_number,face_weight,mesh.f_ind,face_dst,tau,rho,mesh.v_flip,avgfac,L,index,P);
 
 %g即为算法5的g
 if g_is_zero
@@ -56,7 +59,7 @@ drawnow; pause(0.001);
 
 
 %% L，M为论文App D中的L和M。P和AVG用于求论文中的矩阵g
-function [L,M,P,AVG]=L_M_P_AVG(g_is_zero,k_r,k_b,k_c,k_t,mu,Zmu,Imu,IZmu,face_number,face_weight,face_ind,face_dst,tau,rho,face_area,face_flip,avgfac)
+function [L,P,AVG,index]=L_P_AVG(iteration,g_is_zero,k_r,k_b,k_c,k_t,mu,Zmu,Imu,IZmu,face_number,face_weight,face_ind,face_dst,tau,rho,face_flip,avgfac,L,index,P)
 %w即为论文App D中的W
 w=zeros(3*face_number,4,4);
 for i=1:4
@@ -73,47 +76,50 @@ D(:,1,:)=[rho(:,1) -rho(:,2) -rho(:,3) -rho(:,4)];
 D(:,2,:)=[rho(:,2) rho(:,1) -rho(:,4) rho(:,3)];
 D(:,3,:)=[rho(:,3) rho(:,4) rho(:,1) -rho(:,2)];
 D(:,4,:)=[rho(:,4) -rho(:,3) rho(:,2) rho(:,1)];
-%Q存储者L中的非零项的值
+%Q存储者L中的非零项的值。matrix_multiplication_c令两批4*4矩阵相乘
 Q=zeros(3*face_number,4,4,4);
-Q_temp=matrix_multiplication(D,w,true);
-Q(:,1,:,:)=matrix_multiplication(Q_temp,D,false);
+Q_temp=reshape(matrix_multiplication_c(D,w,true),3*face_number,4,4);
+Q(:,1,:,:)=reshape(matrix_multiplication_c(Q_temp,D,false),3*face_number,4,4);
 Q(:,2,:,:)=-Q_temp;
-Q(:,3,:,:)=-matrix_multiplication(w,D,false);
+Q(:,3,:,:)=-reshape(matrix_multiplication_c(w,D,false),3*face_number,4,4);
 Q(:,4,:,:)=w;
 %L_row，L_col为L中非零项的行与列的下标
-L_row=zeros(4,4,face_number,4);
-L_col=zeros(4,4,face_number,4);
-i=1:face_number;
-for j=1:4
-    for k=1:4
-        L_row(1,j,:,k)=i+(j-1)*face_number;
-        L_col(1,k,:,j)=i+(j-1)*face_number;
-        L_row(2,j,:,k)=face_dst(i,1)+(j-1)*face_number;
-        L_col(2,k,:,j)=i+(j-1)*face_number;
-        L_row(3,j,:,k)=face_dst(i,2)+(j-1)*face_number;
-        L_col(3,k,:,j)=i+(j-1)*face_number;
-        L_row(4,j,:,k)=face_dst(i,3)+(j-1)*face_number;
-        L_col(4,k,:,j)=i+(j-1)*face_number;   
+if iteration<1
+    L_row=zeros(4,4,face_number,4);
+    L_col=zeros(4,4,face_number,4);
+    i=1:face_number;
+    for j=1:4
+        for k=1:4
+            L_row(1,j,:,k)=i+(j-1)*face_number;
+            L_col(1,k,:,j)=i+(j-1)*face_number;
+            L_row(2,j,:,k)=face_dst(i,1)+(j-1)*face_number;
+            L_col(2,k,:,j)=i+(j-1)*face_number;
+            L_row(3,j,:,k)=face_dst(i,2)+(j-1)*face_number;
+            L_col(3,k,:,j)=i+(j-1)*face_number;
+            L_row(4,j,:,k)=face_dst(i,3)+(j-1)*face_number;
+            L_col(4,k,:,j)=i+(j-1)*face_number;   
+        end
     end
 end
 %将D中位置相同的非零项加起来，得到L_val
 L_val=zeros(4,face_number,4,4);
 face_flip=reshape(face_flip',3,face_number);
 i=1:face_number ;
+I=[3*i-2;3*i-1;3*i];
+L_val(2:4,:,:,:)=reshape(Q(I,2,:,:)+Q(face_flip(:),3,:,:),3,face_number,4,4);
 L_val(1,:,:,:)=Q(face_flip(1,:),1,:,:)+Q(face_flip(2,:),1,:,:)+Q(face_flip(3,:),1,:,:)+Q(3*i-2,4,:,:)+Q(3*i-1,4,:,:)+Q(3*i,4,:,:);
-L_val(2,:,:,:)=Q(3*i-2,2,:,:)+Q(face_flip(1,:),3,:,:);
-L_val(3,:,:,:)=Q(3*i-1,2,:,:)+Q(face_flip(2,:),3,:,:);
-L_val(4,:,:,:)=Q(3*i,2,:,:)+Q(face_flip(3,:),3,:,:);
 %为了与L_row，L_col的形式保持一致
-L_val1=zeros(4,4,face_number,4);
-for i=1:4
-    L_val1(:,i,:,:)=L_val(:,:,i,:);
-end
+L_val1=permute(L_val,[1,3,2,4]);
 %论文App D中的矩阵L
-L=sparse(L_row(:),L_col(:),L_val1(:)+10^-20,4*face_number,4*face_number);
+if iteration<1
+    L=sparse(L_row(:),L_col(:),L_val1(:)+10^-20,4*face_number,4*face_number);
+    L_index=4*face_number.*(L_col(:)-1)+L_row(:);
+    [~,index]=sort(L_index);
+    index=int32(index)-1;
+else
+    update_matrix(L,L_val1+10^-20,index);
+end
 
-%论文App D中的矩阵M
-M=sparse(1:face_number*4,1:face_number*4,repelem(face_area,1,4));
 
 if ~g_is_zero
     AVG1=sparse(face_ind,face_dst_temp(:),tau(:,1).*avgfac,3*face_number,face_number);
@@ -125,29 +131,65 @@ if ~g_is_zero
         AVG2,AVG1,-AVG4,AVG3;...
         AVG4,-AVG3,AVG2,AVG1;...
         AVG4,-AVG3,AVG2,AVG1];
-    
+
     %P为论文App D中g的一组成部分
-    spdiag=@(V)sparse(1:length(V(:)),1:length(V(:)),V(:));
-    P11=spdiag(1-mu(:,1).*mu(:,1));
-    P12=spdiag(-mu(:,1).*mu(:,2));
-    P13=spdiag(-mu(:,1).*mu(:,3));
-    P14=spdiag(-mu(:,1).*mu(:,4));
-    P22=spdiag(1-mu(:,2).*mu(:,2));
-    P23=spdiag(-mu(:,2).*mu(:,3));
-    P24=spdiag(-mu(:,2).*mu(:,4));
-    P33=spdiag(1-mu(:,3).*mu(:,3));
-    P34=spdiag(-mu(:,3).*mu(:,4));
-    P44=spdiag(1-mu(:,4).*mu(:,4));
-   
-    P=[P11,P12,P13,P14;...
-       P12,P22,P23,P24;...
-       P13,P23,P33,P34;...
-       P14,P24,P34,P44];
-   %用时更长
-%     P=[spdiag(1-mu(:,1).*mu(:,1)),spdiag(-mu(:,1).*mu(:,2)),spdiag(-mu(:,1).*mu(:,3)),spdiag(-mu(:,1).*mu(:,4));...
-%         spdiag(-mu(:,1).*mu(:,2)),spdiag(1-mu(:,2).*mu(:,2)),spdiag(-mu(:,2).*mu(:,3)),spdiag(-mu(:,2).*mu(:,4));...
-%         spdiag(-mu(:,1).*mu(:,3)),spdiag(-mu(:,2).*mu(:,3)),spdiag(1-mu(:,3).*mu(:,3)),spdiag(-mu(:,3).*mu(:,4));...
-%         spdiag(-mu(:,1).*mu(:,4)),spdiag(-mu(:,2).*mu(:,4)),spdiag(-mu(:,3).*mu(:,4)),spdiag(1-mu(:,4).*mu(:,4));];
+    if iteration<1
+        spdiag=@(V)sparse(1:length(V(:)),1:length(V(:)),V(:));
+        P11=spdiag(1-mu(:,1).*mu(:,1));
+        P12=spdiag(-mu(:,1).*mu(:,2));
+        P13=spdiag(-mu(:,1).*mu(:,3));
+        P14=spdiag(-mu(:,1).*mu(:,4));
+        P22=spdiag(1-mu(:,2).*mu(:,2));
+        P23=spdiag(-mu(:,2).*mu(:,3));
+        P24=spdiag(-mu(:,2).*mu(:,4));
+        P33=spdiag(1-mu(:,3).*mu(:,3));
+        P34=spdiag(-mu(:,3).*mu(:,4));
+        P44=spdiag(1-mu(:,4).*mu(:,4));
+
+        P=[P11,P12,P13,P14;...
+           P12,P22,P23,P24;...
+           P13,P23,P33,P34;...
+           P14,P24,P34,P44];
+    else
+        P_val=[1-mu(:,1).*mu(:,1),-mu(:,1).*mu(:,2),-mu(:,1).*mu(:,3),-mu(:,1).*mu(:,4);...
+                -mu(:,1).*mu(:,2),1-mu(:,2).*mu(:,2),-mu(:,2).*mu(:,3),-mu(:,2).*mu(:,4);...
+                -mu(:,1).*mu(:,3),-mu(:,2).*mu(:,3),1-mu(:,3).*mu(:,3),-mu(:,3).*mu(:,4);...
+                -mu(:,1).*mu(:,4),-mu(:,2).*mu(:,4),-mu(:,3).*mu(:,4),1-mu(:,4).*mu(:,4)]';    
+        update_matrix(P,P_val);
+    end
+    %留作测试
+%    spdiag=@(V)sparse(1:length(V(:)),1:length(V(:)),V(:));
+%     P11=spdiag(1-mu(:,1).*mu(:,1));
+%     P12=spdiag(-mu(:,1).*mu(:,2));
+%     P13=spdiag(-mu(:,1).*mu(:,3));
+%     P14=spdiag(-mu(:,1).*mu(:,4));
+%     P22=spdiag(1-mu(:,2).*mu(:,2));
+%     P23=spdiag(-mu(:,2).*mu(:,3));
+%     P24=spdiag(-mu(:,2).*mu(:,4));
+%     P33=spdiag(1-mu(:,3).*mu(:,3));
+%     P34=spdiag(-mu(:,3).*mu(:,4));
+%     P44=spdiag(1-mu(:,4).*mu(:,4));
+%    
+%     P=[P11,P12,P13,P14;...
+%        P12,P22,P23,P24;...
+%        P13,P23,P33,P34;...
+%        P14,P24,P34,P44];
+   %用时更长,约为上面的两倍。90%时间花在最后一行的构建稀疏矩阵上。
+%     P_row=zeros(3*face_number,4,4);
+%     P_col=zeros(3*face_number,4,4);
+%     P_val=zeros(3*face_number,4,4);
+%     for i=1:4
+%         for j=1:4
+%             P_row(:,i,j)=(1:3*face_number)+(i-1)*3*face_number;
+%             P_col(:,i,j)=(1:3*face_number)+(j-1)*3*face_number;
+%             if i==j
+%                 P_val(:,i,j)=1-mu(:,i).*mu(:,j);
+%             else
+%                 P_val(:,i,j)=-mu(:,i).*mu(:,j);
+%             end
+%         end
+%     end
+%     P=sparse(P_row(:),P_col(:),P_val(:),3*face_number*4,3*face_number*4);
 else 
     P=0;
     AVG=0;
@@ -228,21 +270,8 @@ gradE_mu=face_weight.*(xi.*mu_xi+Z_xi.*Zmu_xi+I_xi.*Imu_xi+IZ_xi.*IZmu_xi);
 gradE_mu_temp=gradE_mu(:);
 g=AVG'*(P'*gradE_mu_temp);
 
-%% 两批4*4矩阵相乘
-function C=matrix_multiplication(A,B,A_is_transpose)
-C=zeros(size(A));
-if A_is_transpose ==false
-    for i=1:4
-        C=C+A(:,:,i).*B(:,i,:);
-    end
-else
-   for i=1:4
-        for j=1:4
-            for k=1:4
-                C(:,j,k)=C(:,j,k)+A(:,i,j).*B(:,i,k);
-            end
-        end
-    end
-end
+
+
+
 
 
