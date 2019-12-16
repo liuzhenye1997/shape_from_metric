@@ -23,9 +23,14 @@ face_psi_norm=sqrt(sum(lambda.^2,2));
 lambda=lambda./face_psi_norm;
 %迭代使得论文定义的能量变小,输出face_psi,即λ.
 iteration=0;
-solver1 = splsolver(L_graph, 'ldlt');
+solver1 = 0;
+L=0;
+index=0;
+M=0;
+P=0;
 while iteration<max_iteration  
-    [solver1,lambda]=solver(solver1,g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,lambda);
+%     [solver1,lambda]=solver(solver1,g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,lambda);
+    [solver1,lambda,L,index,M,P]=solver(solver1,g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,lambda,L,index,M,P);
     iteration=iteration+1;
 end
 %利用求得的face_psi(即λ)
