@@ -25,12 +25,13 @@ lambda=lambda./face_psi_norm;
 iteration=0;
 solver1 = 0;
 L=0;
-index=0;
+L_index=0;
 M=0;
 P=0;
+AVG=0;
+AVG_index=0;
 while iteration<max_iteration  
-%     [solver1,lambda]=solver(solver1,g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,lambda);
-    [solver1,lambda,L,index,M,P]=solver(solver1,g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,lambda,L,index,M,P);
+    [solver1,lambda,L,L_index,M,P,AVG,AVG_index]=solver(solver1,g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,vertex_A,face_dihedral,vertex_theta,lambda,L,L_index,M,P,AVG,AVG_index);
     iteration=iteration+1;
 end
 %利用求得的face_psi(即λ)
