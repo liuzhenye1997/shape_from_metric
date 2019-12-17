@@ -1,4 +1,4 @@
-function [solver1,lambda,L,index,M,P]=solver(solver1,g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,face_A,face_dihedral,face_theta,lambda,L,index,M,P)
+function [solver1,lambda,L,L_index,M,P,AVG,AVG_index]=solver(solver1,g_is_zero,mesh,iteration,vertex_theta,L_graph,angle,face_weight,face_src,face_dst,face_A,face_dihedral,face_theta,lambda,L,L_index,M,P,AVG,AVG_index)
 %τ=exp(i*A)表示的旋转转化成四元数的结果。
 halfDihedralZ=0.5*face_dihedral(:).*[zeros(3*mesh.f_number,1) cos(face_theta(:)) sin(face_theta(:))];
 face_A_temp=face_A';
@@ -38,7 +38,7 @@ IZmu=Quaternion.batch_multiplication(IZ,mu);
 if iteration<1
     M=sparse(1:mesh.f_number*4,1:mesh.f_number*4,repelem(mesh.f_area,1,4));
 end
-[L,P,AVG,index]=L_P_AVG(iteration,g_is_zero,k_r,k_b,k_c,k_t,mu,Zmu,Imu,IZmu,mesh.f_number,face_weight,mesh.f_ind,face_dst,tau,rho,mesh.v_flip,avgfac,L,index,P);
+[L,P,AVG,AVG_index,L_index]=L_P_AVG(iteration,g_is_zero,k_r,k_b,k_c,k_t,mu,Zmu,Imu,IZmu,mesh.f_number,face_weight,mesh.f_ind,face_dst,tau,rho,mesh.v_flip,avgfac,L,L_index,P,AVG,AVG_index);
 
 %g即为算法5的g
 if g_is_zero
@@ -59,7 +59,7 @@ drawnow; pause(0.001);
 
 
 %% L，M为论文App D中的L和M。P和AVG用于求论文中的矩阵g
-function [L,P,AVG,index]=L_P_AVG(iteration,g_is_zero,k_r,k_b,k_c,k_t,mu,Zmu,Imu,IZmu,face_number,face_weight,face_ind,face_dst,tau,rho,face_flip,avgfac,L,index,P)
+function [L,P,AVG,AVG_index,L_index]=L_P_AVG(iteration,g_is_zero,k_r,k_b,k_c,k_t,mu,Zmu,Imu,IZmu,face_number,face_weight,face_ind,face_dst,tau,rho,face_flip,avgfac,L,L_index,P,AVG,AVG_index)
 %w即为论文App D中的W
 w=zeros(3*face_number,4,4);
 for i=1:4
@@ -115,23 +115,54 @@ if iteration<1
     L=sparse(L_row(:),L_col(:),L_val1(:)+10^-20,4*face_number,4*face_number);
     L_index=4*face_number.*(L_col(:)-1)+L_row(:);
     [~,index]=sort(L_index);
-    index=int32(index)-1;
+    L_index=int32(index)-1;
 else
-    update_matrix(L,L_val1+10^-20,index);
+    update_matrix(L,L_val1+10^-20,L_index);   
 end
 
 
 if ~g_is_zero
-    AVG1=sparse(face_ind,face_dst_temp(:),tau(:,1).*avgfac,3*face_number,face_number);
-    AVG2=sparse(face_ind,face_dst_temp(:),tau(:,2).*avgfac,3*face_number,face_number);
-    AVG3=sparse(face_ind,face_dst_temp(:),tau(:,3).*avgfac,3*face_number,face_number);
-    AVG4=sparse(face_ind,face_dst_temp(:),tau(:,4).*avgfac,3*face_number,face_number);
+    if iteration<1
+        face_src=[1:face_number;1:face_number;1:face_number];
+        d_row=[face_ind,face_ind]';
+        d_col=[face_src(:);face_dst_temp(:)];
+        d_row=d_row(:);
+        d_col=d_col(:);
+        AVG1_val=[avgfac;(tau(:,1).*avgfac)];
+        AVG2_val=[zeros(3*face_number,1);(tau(:,2).*avgfac)];
+        AVG3_val=[zeros(3*face_number,1);(tau(:,3).*avgfac)];
+        AVG4_val=[zeros(3*face_number,1);(tau(:,4).*avgfac)];
+        
+        AVG_val=[AVG1_val,-AVG2_val,-AVG3_val,-AVG4_val;...
+            AVG2_val,AVG1_val,-AVG4_val,AVG3_val;...
+            AVG3_val,AVG4_val,AVG1_val,-AVG2_val;...
+            AVG4_val,-AVG3_val,AVG2_val,AVG1_val];
+        AVG_row=[d_row,d_row,d_row,d_row;...
+            d_row+face_number*3,d_row+face_number*3,d_row+face_number*3,d_row+face_number*3;...
+            d_row+face_number*6,d_row+face_number*6,d_row+face_number*6,d_row+face_number*6;...
+            d_row+face_number*9,d_row+face_number*9,d_row+face_number*9,d_row+face_number*9];
+        AVG_col=[d_col,d_col+face_number,d_col+2*face_number,d_col+3*face_number;...
+            d_col,d_col+face_number,d_col+2*face_number,d_col+3*face_number;...
+            d_col,d_col+face_number,d_col+2*face_number,d_col+3*face_number;...
+            d_col,d_col+face_number,d_col+2*face_number,d_col+3*face_number];
+        AVG=sparse(AVG_row(:),AVG_col(:),AVG_val(:)+10^-20,12*face_number,4*face_number);
 
-    AVG=[AVG1,-AVG2,-AVG3,-AVG4;...
-        AVG2,AVG1,-AVG4,AVG3;...
-        AVG3,AVG4,AVG1,-AVG2;...
-        AVG4,-AVG3,AVG2,AVG1];
-
+        AVG_index=12*face_number*(AVG_col(:)-1)+AVG_row(:);
+        [~,index]=sort(AVG_index);
+        AVG_index=int32(index)-1;
+    else
+        AVG1_val=[avgfac;(tau(:,1).*avgfac)];
+        AVG2_val=[zeros(3*face_number,1);(tau(:,2).*avgfac)];
+        AVG3_val=[zeros(3*face_number,1);(tau(:,3).*avgfac)];
+        AVG4_val=[zeros(3*face_number,1);(tau(:,4).*avgfac)];
+        
+        AVG_val=[AVG1_val,-AVG2_val,-AVG3_val,-AVG4_val;...
+            AVG2_val,AVG1_val,-AVG4_val,AVG3_val;...
+            AVG3_val,AVG4_val,AVG1_val,-AVG2_val;...
+            AVG4_val,-AVG3_val,AVG2_val,AVG1_val];
+        update_matrix(AVG,AVG_val,AVG_index);
+    end
+  
     %P为论文App D中g的一组成部分
     if iteration<1
         spdiag=@(V)sparse(1:length(V(:)),1:length(V(:)),V(:));
