@@ -5,7 +5,7 @@
 %由于加了一个判断结果是否为实数的步骤，正确率大幅下降，接近0.
 faces=[1 2 5;2 3 5;1 4 5;3 4 5;1 2 6;2 3 6;1 4 6;3 4 6];
 right=0;
-num=10000;%总的次数
+num=1000;%总的次数
 options = optimset('TolFun', 10^-15);
 for i=1:num
 %     %先随机生成点，保证满足对应边长的图形确实存在
@@ -14,12 +14,15 @@ for i=1:num
     length=edge_length(faces,points_sol);
     %初始化对角线长度，即x0，为全部边长的平均值的根号2倍。
     x0=sum(length(:))/(3*size(length,1))*sqrt(2);
+    x0=norm(points_sol(6,:)-points_sol(5,:));
     f=@(x)dis(x,points_sol);
     [x,fval]=fminunc(f,x0,options);
     %计算输出的error小于10^-5的次数并保证结果是实数
-    if fval<10^-5 && isreal(result)
+    if fval<10^-5 
         [error,result]=f(x);
-        right=right+1;
+        if isreal(result)
+            right=right+1;
+        end
     end
 end
 sprintf("正确率为%%%f",right/num*100)
