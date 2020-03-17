@@ -17,7 +17,7 @@ for i=1:num
     length=edge_length(faces,points_sol);
     %初始化对角线长度，即x0，为全部边长的平均值。
     x0=sum(length(:))/(3*size(length,1));
-    x0=norm(points_sol(6,:)-points_sol(5,:));%真实的对角线长度，可选为初值
+%     x0=norm(points_sol(6,:)-points_sol(5,:));%真实的对角线长度，可选为初值
     f=@(x)dis(x,points_sol);
     [x,fval]=fminunc(f,x0,options);
     %计算输出的error小于10^-5的次数并保证结果是实数
