@@ -14,7 +14,8 @@ for i=1:num
     %先随机生成点，保证满足对应边长的图形确实存在
     %接下来的两行二选一。第一行是生成随机的十六面体，第二行是生成凸的十六面体。
 %     points_sol=rand(10,3);
-    points_sol=create_convex_Sixteen_face_body(100);%若要对八面体做实验这行可换成points_sol=create_convex_octahedron(z)
+    z=100;%z用来控制上下两个顶点到x-y平面的距离，距离为rand(1)*z+1
+    points_sol=create_convex_Sixteen_face_body(z);%若要对八面体做实验这行可换成points_sol=create_convex_octahedron(z)
     length=edge_length(faces,points_sol);
     %初始化对角线长度，即x0，为全部边长的平均值。
     x0=sum(length(:))/(3*size(length,1));
